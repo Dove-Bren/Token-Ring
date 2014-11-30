@@ -1,14 +1,12 @@
 package com.smanzana.Project3.Node;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
 import com.smanzana.Project3.Frame.Frame;
-import com.smanzana.Project3.Frame.Token;
 
 public class Bridge extends Node {
 	
@@ -18,6 +16,7 @@ public class Bridge extends Node {
 	
 	private enum STDMessage {
 		FINISH;
+		
 	}
 	
 	
@@ -147,6 +146,21 @@ public class Bridge extends Node {
 	}
 	
 	private void communicate(STDMessage msg) {
+		//to denote a message TO the bridge itself, we use a source of 0
+		//these special frames are going to carry the message in the data. The frame will obey all the same rules
+		//as all other frames.
+		//the data will be the enum constant STDMessage defines.
+		byte[] data = new byte[1];
+		data[0] = (byte) msg.ordinal();
+		byte[] frame = assembleFrame((byte) 0, 1, data);
+		
+		frame[3] = 0; //set source to 0
+		
+		try {
+			sendBridge(frame);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
