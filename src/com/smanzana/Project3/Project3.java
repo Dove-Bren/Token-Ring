@@ -20,11 +20,35 @@ public class Project3 {
 	
 	public static void main(String[] args) { //has to be 2 or more!
 		
-		if (args.length != 1 && args.length != 2) {
+		if (args.length != 1) {
 			//invalid args
-			System.out.println("Invalid arguments. This program only accepts 1 or 2 arguments: the number of nodes and a custom THT");
+			System.out.println("Usage: java -jar jar_name.jar ring_config.conf");
 			return;
 		}
+		
+		File file = new File(args[0]);
+		if (!file.exists()) {
+			System.out.println("Unable to find the config file: " + args[0]);
+			return;
+		}
+		
+		Scanner input = null;
+		try {
+			input = new Scanner(file);
+		} catch (FileNotFoundException e2) {
+			e2.printStackTrace();
+			System.out.println("Error when trying to find file: " + args[0]);
+			return;
+		}
+		
+		byte address;
+		Node node;
+		while (input.hasNextLine()) {
+			address = (byte) Integer.parseInt(input.nextLine());
+			node = new Node(THT, address, null);
+		}
+		
+		
 		
 		Project3.nodeCount = Integer.parseInt(args[0]);
 		if (args.length == 2) {
