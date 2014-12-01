@@ -96,13 +96,14 @@ public class Monitor extends Node {
 					continue;
 				}
 				
-				//else the ring is not in use and the token needs be drained. In it's place, issue a KILL TOKEN
-				//defined (by me) to be a token with the value 2 for the FC byte
-				passKill();
+				//else the ring is not in use and the token needs be drained. In it's place, issue a FINISH TOKEN
+				//defined (by me) to be a token with the value 3 for the FC byte
+				passFINISH();
 				//don't send the token, effectively draining it from the ring.
 				continue;
 			}
 			if (Frame.Header.isKill(header)) { //else is it a kill frame?
+				passKill();
 				try {
 					kill();
 					System.out.println("Monitor has been killed. All nodes should now be killed.");
