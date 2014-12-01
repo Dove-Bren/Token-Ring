@@ -98,7 +98,7 @@ public class Monitor extends Node {
 				
 				//else the ring is not in use and the token needs be drained. In it's place, issue a FINISH TOKEN
 				//defined (by me) to be a token with the value 3 for the FC byte
-				passFINISH();
+				passFinish();
 				//don't send the token, effectively draining it from the ring.
 				continue;
 			}

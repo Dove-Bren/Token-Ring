@@ -644,6 +644,29 @@ public class Node extends Thread {
 		}
 	}
 	
+	/**
+	 * Passes a finish frame, which is a message from the monitor to the bridge. It lets the remote bridge know
+	 * that this ring is finished sending data, but doesn't kill it. Instead, the ring is kept online so that it
+	 * can still recieve messages.
+	 */
+	protected void passFinish() {
+		//finish frame is much like a kill frame, except the FC byte is 3
+		byte[] finish = new byte[6];
+		finish[0] = 0;
+		finish[1] = 3;
+		finish[2] = 0;
+		finish[3] = 0;
+		finish[4] = 0;
+		finish[5] = 0;
+		
+		try {
+			send(finish);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Unable to pass finish to output from node [" + address + "]!");
+		}
+	}
+	
 	
 	/**
 	 * Creates a frame with the given information. This handles putting the bytes in the right order.<br />
