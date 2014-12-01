@@ -66,7 +66,6 @@ public class Bridge extends Node {
 	public void run() {
 		
 		byte[] frame;
-		boolean go = true;
 		while (true) {
 			try {
 				frame = getFrame();
