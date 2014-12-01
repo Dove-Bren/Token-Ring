@@ -15,7 +15,8 @@ public class Bridge extends Node {
 	private boolean connected;
 	
 	public enum STDMessage {
-		FINISH((byte) 1);
+		FINISH((byte) 1),
+		KILL((byte) 2);
 		
 		public byte id;
 		
