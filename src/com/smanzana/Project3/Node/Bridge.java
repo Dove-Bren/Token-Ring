@@ -215,9 +215,24 @@ public class Bridge extends Node {
 	}
 	
 	private boolean processBridgeFrame(byte[] frame) {
+		/*
+		 * We will get a KILL frame from the bridge if any. If we get somethign else, we assume it was wrong.
+		 */
+		byte[] data = Frame.getData(frame);
+		if (data == null || data.length != 1) {
+			return false;
+		}
+		
+		STDMessage msg = STDMessage.fromId(data[0]);
 		
 		
-		return false;
+		switch (msg) {
+		case KILL:
+			passKill();
+			return false;
+		default:
+			return false;
+		}
 	}
 	
 	private void sendBridge(byte[] frame) throws IOException {
