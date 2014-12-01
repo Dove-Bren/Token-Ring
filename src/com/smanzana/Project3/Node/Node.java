@@ -29,7 +29,6 @@ import com.smanzana.Project3.Frame.Token;
 public class Node extends Thread {
 	
 	protected Socket input, output;
-	protected ServerSocket sSock;
 	private boolean hasToken;
 	private List<String> messages, sentMessages;
 	protected byte address;
@@ -40,18 +39,13 @@ public class Node extends Thread {
 	
 	/**
 	 * Creates a node with the passed socket. The node has no message it needs to send and does not have the token.<br />
-	 * The node needs a holding time and address for obvious reasons, but also needs a server socket. To avoid passing in
-	 * a bunch of information about it's address or having it create a random address and giving methods to pass it back,
-	 * I decided to pool the creation and designation of addresses above the Node. The node class simply works with
-	 * passing and parsing data and not simulation things like the addresses of each node and setting them up.
+	 * The node needs a holding time and address for obvious reasons, but also needs a server socket.
 	 * @param tokenHoldingTime How many frames this node can send upon receipt of the token
 	 * @param address A byte-wide address of this node. This is pretty much the node's ID
-	 * @param sSock A server socket set up already for the node.
 	 */
-	public Node(int tokenHoldingTime, byte address, ServerSocket sSock) {
+	public Node(int tokenHoldingTime, byte address) {
 		this.tokenHoldingTime = tokenHoldingTime;
 		this.address = address;
-		this.sSock = sSock;
 		this.token = null;
 		hasToken = false;
 		messages = new LinkedList<String>(); //messages we need to send
@@ -99,19 +93,23 @@ public class Node extends Thread {
 		}
 	}
 	
-	public void listen() {
-		if (sSock == null || sSock.isClosed() || !sSock.isBound()) {
-			System.out.println("Unable to begin listening with socket of address " + address + " because the server socket "
-					+ "is closed, doesn't exist, or is not bound!");
+	public void listen(SocketAddress address) {
+		
+		ServerSocket sSock = null;
+		try {
+			sSock = new ServerSocket();
+			sSock.bind(address);
+		} catch (IOException e) {
+			System.out.println("Error when creating server socket!");
 			return;
 		}
 		
 		try {
 			input = sSock.accept();
+			sSock.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Error when trying to listen on server socket in node [" + address + "] !\n\n");
-			return;
 		}
 	}
 	
@@ -125,7 +123,7 @@ public class Node extends Thread {
 	 */
 	public void run() {
 		
-		setup();
+//		setup();
 			
 		while (true) {
 			if (output == null || output.isClosed() || !output.isConnected()) {
@@ -427,36 +425,36 @@ public class Node extends Thread {
 		}
 	}
 	
-	public void setup() {
-		
-		//I didn't want to include this in here, but it has to be so it's on this thread
-		//we connect all the nodes here. All nodes will try and connect, except node with address 0. It will listen.
-		//when a node connects, it will listen. The chain will continue that way.
-		if (address == 0) { //monitor node
-			System.out.println("monitor listening...");
-			listen();
-			System.out.println("monitor connecting...");
-			//after something connects, we need to connect this node too
-			connect(new InetSocketAddress("127.0.0.1", Project3.portOffset + 1)); // + 1 because 0 is the monitor
-			//finally, create the token and pass it
-			System.out.println("monitor passing token!");
-			token = new Token(null); //make generic token
-			passToken();
-		}
-		else {
-			System.out.println("node " + address + " connecting...");
-			if (address == Project3.lastAddress) {
-				//need to connect to 0, not address + 1
-				connect(new InetSocketAddress("127.0.0.1", Project3.portOffset));
-			}
-			else {
-				connect(new InetSocketAddress("127.0.0.1", Project3.portOffset + address + 1));
-			}
-			System.out.println("node " + address + " listening...");
-			listen();
-			System.out.println("node " + address + " connected!");
-		}
-	}
+//	public void setup() {
+//		
+//		//I didn't want to include this in here, but it has to be so it's on this thread
+//		//we connect all the nodes here. All nodes will try and connect, except node with address 0. It will listen.
+//		//when a node connects, it will listen. The chain will continue that way.
+//		if (address == 0) { //monitor node
+//			System.out.println("monitor listening...");
+//			listen();
+//			System.out.println("monitor connecting...");
+//			//after something connects, we need to connect this node too
+//			connect(new InetSocketAddress("127.0.0.1", Project3.portOffset + 1)); // + 1 because 0 is the monitor
+//			//finally, create the token and pass it
+//			System.out.println("monitor passing token!");
+//			token = new Token(null); //make generic token
+//			passToken();
+//		}
+//		else {
+//			System.out.println("node " + address + " connecting...");
+//			if (address == Project3.lastAddress) {
+//				//need to connect to 0, not address + 1
+//				connect(new InetSocketAddress("127.0.0.1", Project3.portOffset));
+//			}
+//			else {
+//				connect(new InetSocketAddress("127.0.0.1", Project3.portOffset + address + 1));
+//			}
+//			System.out.println("node " + address + " listening...");
+//			listen();
+//			System.out.println("node " + address + " connected!");
+//		}
+//	}
 	
 	/**
 	 * Kills the node. This deals with the socket held by the node.
@@ -470,7 +468,6 @@ public class Node extends Thread {
 			input.close();
 		if (output != null && !output.isClosed())
 			output.close();
-		sSock.close();
 		writer.close();
 	}
 	
