@@ -14,8 +14,23 @@ public class Bridge extends Node {
 	
 	private boolean connected;
 	
-	private enum STDMessage {
-		FINISH;
+	public enum STDMessage {
+		FINISH((byte) 1);
+		
+		public byte id;
+		
+		private STDMessage(byte id) {
+			this.id = id;
+		}
+		
+		public static STDMessage fromId(byte ID) {
+			switch (ID) {
+			case 1:
+			default:
+				return STDMessage.FINISH;
+				//break;
+			}
+		}
 		
 	}
 	
