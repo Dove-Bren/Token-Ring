@@ -1,18 +1,32 @@
 package com.smanzana.Project3.Node;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import com.smanzana.Project3.Project3;
 import com.smanzana.Project3.Frame.Frame;
 
 public class Bridge extends Node {
 	
-	private Socket bridgeSock;
+	/**
+	 * The socket that the remote bridge will send data over
+	 */
+	private Socket bridgeIn;
+	
+	/**
+	 * The socket this bridge can send data over
+	 */
+	private Socket bridgeOut;
 	
 	private boolean connected;
+	
+	private SocketAddress remoteAddress;
 	
 	public enum STDMessage {
 		FINISH((byte) 1),
@@ -30,43 +44,92 @@ public class Bridge extends Node {
 			default:
 				return STDMessage.FINISH;
 				//break;
+			case 2:
+				return STDMessage.KILL;
 			}
 		}
 		
 	}
 	
 	
-	public Bridge(int tokenHoldingTime, byte address, int bridgePort) {
-		super(tokenHoldingTime, address);
-		
-		try {
-			bridgeSock = new Socket("127.0.0.1", bridgePort);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			System.out.println("Encountered Unknown Host Exception!\n "
-					+ "Bridge is NOT connected!");
-			bridgeSock = null;
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println("Encountered Unknown Host Exception!\n "
-					+ "Bridge is NOT connected!");
-			bridgeSock = null;
-		}
-		
-		//bridgeSock will be null if connection issues arise
-		
-		if (bridgeSock == null) {
-			connected = false;
-		} else {
-			connected = true;
-		}
+	public Bridge(int tokenHoldingTime, byte address, int port, SocketAddress remoteBridgeAddr) {
+		super(tokenHoldingTime, address, port);
+		this.remoteAddress = remoteBridgeAddr;
 	}
 	
 	@Override
 	public void run() {
 		
+		setup();
+		
+		if (remoteAddress == null) {
+			connected = false;
+			System.out.println("\tBridge is in offline mode!");
+			connected = false;
+			//do not connect to remote bridge.
+		} else {
+		
+			try {
+				bridgeOut = new Socket();
+				bridgeOut.connect(remoteAddress);
+			} catch (UnknownHostException e) {
+				System.out.println("Encountered Unknown Host Exception!\n "
+						+ "Bridge is NOT connected!");
+				bridgeOut = null;
+			} catch (IOException e) {
+				System.out.println("Encountered Unknown Host Exception!\n "
+						+ "Bridge is NOT connected!");
+				bridgeOut = null;
+			}
+			
+			//bridgeSock will be null if connection issues arise
+			
+			if (bridgeOut == null) {
+				connected = false;
+			} else {
+				connected = true;
+				//We still need a way for this socket to receive data, so we send
+				//a port we will now listen on
+				byte offset = (byte) Project3.rand.nextInt(256);
+				int tmpPort = 7000 + offset;
+				
+				ServerSocket sSock;
+				try {
+					sendBridge(new byte[] {offset});
+				sSock = new ServerSocket();
+				sSock.bind(new InetSocketAddress("127.0.0.1", tmpPort));
+				bridgeIn = sSock.accept(); 
+				sSock.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.out.println("Error when creating bridge's input socket!");
+					return;
+				}
+				System.out.println("Bridge has connected to the remote bridge!");
+			}
+		}
+		
 		byte[] frame;
 		while (true) {
+			
+			if (connected) {
+				frame = getBridgeFrame();
+				
+				if (frame != null) {
+					if (processBridgeFrame(frame)) {
+						try {
+							kill();
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.out.println("ERROR when trying to kill bridge!!!!!!");
+						}
+						return;
+					}
+					continue;
+				}
+			}
+			
+			
 			try {
 				frame = getFrame();
 			} catch (IOException e) {
@@ -91,19 +154,23 @@ public class Bridge extends Node {
 			//regardless of if we got a ring frame, now try and fetch/process a bridge frame
 			//this is how we avoid starving the bridge of ring. We do one of either if they have it
 			
-			frame = getBridgeFrame();
-			
-			if (frame != null) {
-				if (processBridgeFrame(frame)) {
-					try {
-						kill();
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.out.println("ERROR when trying to kill bridge!!!!!!");
-					}
-					return;
-				}
-			}
+//			if (!connected) {
+//				continue;
+//			}
+//			frame = getBridgeFrame();
+//			
+//			if (frame != null) {
+//				if (processBridgeFrame(frame)) {
+//					try {
+//						kill();
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						System.out.println("ERROR when trying to kill bridge!!!!!!");
+//					}
+//					return;
+//				}
+//				return;
+//			}
 		}
 		
 		
@@ -122,7 +189,7 @@ public class Bridge extends Node {
 			//no frame ready to be picked up
 			return null;
 		}
-		byte[] body = receive(Frame.Header.getSize(header) + 1, 200 + (Frame.Header.getSize(header) * 20));
+		byte[] body = receive((Frame.Header.getSize(header) & 0xFF) + 1, 200 + (Frame.Header.getSize(header) * 20));
 		
 		byte[] frame = new byte[header.length + body.length];
 		
@@ -145,7 +212,7 @@ public class Bridge extends Node {
 	 */
 	private byte[] getBridgeFrame() {
 		Socket inputHolder = this.input;
-		this.input = this.bridgeSock;
+		this.input = this.bridgeIn;
 		byte[] frame;
 		try {
 			frame = getFrame();
@@ -166,7 +233,7 @@ public class Bridge extends Node {
 		//as all other frames.
 		//the data will be the enum constant STDMessage defines.
 		byte[] data = new byte[1];
-		data[0] = (byte) msg.ordinal();
+		data[0] = (byte) msg.id;
 		byte[] frame = assembleFrame((byte) 0, 1, data);
 		
 		frame[3] = 0; //set source to 0
@@ -215,22 +282,41 @@ public class Bridge extends Node {
 	}
 	
 	private boolean processBridgeFrame(byte[] frame) {
+		
+		//It's important to understand we can get two types of messages:
+		//Message forwarded to this ring from the bridge
+		//OR message from the bridge to this bridge node
+		//messages to this bridge node will have source address 0 and 1 byte-wide data
 		/*
 		 * We will get a KILL frame from the bridge if any. If we get somethign else, we assume it was wrong.
 		 */
 		byte[] data = Frame.getData(frame);
-		if (data == null || data.length != 1) {
+		if (data == null) {
 			return false;
 		}
 		
-		STDMessage msg = STDMessage.fromId(data[0]);
-		
-		
-		switch (msg) {
-		case KILL:
-			passKill();
-			return false;
-		default:
+		if (Frame.Header.getSource(Frame.getHeader(frame)) == (byte) 0 && data.length == 1) {		
+			//source was 0, size is 1, this is a communication frame
+			System.out.println("Received a inter-bridge communication frame!");
+			STDMessage msg = STDMessage.fromId(data[0]);
+			
+			
+			switch (msg) {
+			case KILL:
+				System.out.println("Got a kill frame from remote! Forwarding!");
+				passKill();
+				return false;
+			default:
+				return false;
+			}
+		} else {
+			System.out.println("Forwarding message from remote...");
+			try {
+				send(frame);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.out.println("Encountered an error in the bridge when trying to forward a frame from the remote into the local");
+			}
 			return false;
 		}
 	}
@@ -246,7 +332,7 @@ public class Bridge extends Node {
 			return;
 		}
 		
-		OutputStream output = bridgeSock.getOutputStream();
+		OutputStream output = bridgeOut.getOutputStream();
 		
 		output.write(frame);
 		output.flush();

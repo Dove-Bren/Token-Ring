@@ -36,13 +36,25 @@ public class CircularList<o> {
 	}
 	
 	public o next() {
+		if (elements.isEmpty()) {
+			return null;
+		}
+		if (index >= elements.size()) {
+			index = 0;
+		}
 		o obj = elements.get(index);
 		index++;
 		return obj;
 	}
 	
 	public o prev() {
+		if (elements.isEmpty()) {
+			return null;
+		}
 		index--;
+		if (index < 0) {
+			index = elements.size() - 1;
+		}
 		o obj = elements.get(index);
 		return obj;
 	}

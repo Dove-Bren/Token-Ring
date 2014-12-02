@@ -2,14 +2,14 @@ package com.smanzana.Project3;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.SocketAddress;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+import com.smanzana.Project3.Node.Bridge;
 import com.smanzana.Project3.Node.Monitor;
 import com.smanzana.Project3.Node.Node;
 
@@ -20,11 +20,12 @@ public class Project3 {
 	public static int THT = 10;
 	public static Random rand;
 	
-	private static int nodeCount;
+	private static List<Node> nodeList;
 	
 	public static void main(String[] args) { //has to be 2 or more!
 		
 		rand = new Random();
+		nodeList = new LinkedList<Node>();
 		
 		if (args.length != 1 && args.length != 2) {
 			//invalid args
@@ -58,28 +59,60 @@ public class Project3 {
 			System.out.println(portOffset);
 		}
 		
-		Node monitor = new Monitor(THT, (byte) 0, new InetSocketAddress("127.0.0.1", portOffset));
-		//create monitor and set it to accept ocnnections on port (portoffset)
 		
-		System.out.println("YAYYYYY");
 		
 		int offset = 1;
+		Node node = null;
+		File fileIn;
 		
-		byte address;
-		Node lastNode = null, node;
+		System.out.println("Initializing nodes...");
 		while (input.hasNextLine()) {
+			byte address;
 			address = (byte) Integer.parseInt(input.nextLine());
-			node = new Node(THT, address, new InetSocketAddress("127.0.0.1", portOffset + offset));
-			
-			if (lastNode != null) {
-				//this isn't the first node, so connect it to the previous
-				SocketAddress addr = new InetSocketAddress("127.0.0.1", portOffset + offset);
-				
-				
-			}
+			System.out.print("Creating node " + address + " .. ");
+			node = new Node(THT, address, portOffset + offset);
+			fileIn = new File("input-file-" + address);
+			System.out.print("Parsing input .. ");
+			parseInput(node, fileIn);
+			nodeList.add(node);
+			offset++;
+			System.out.println("done");
+		}
+
+		
+		//load up the bridge file, which will have the bridge port number in it
+		File bridgeConf = new File("bridge.conf");
+		Scanner bridgeInfo;
+		try {
+			bridgeInfo = new Scanner(bridgeConf);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.out.println("Unable to find bridge configuration files! The ring will work as if it's just a ring with no bridge.");
+			bridgeInfo = null;
+		}
+		
+		SocketAddress remoteAddress = null;
+		Bridge bridge;
+		if (bridgeInfo != null) {
+			remoteAddress = new InetSocketAddress("127.0.0.1", bridgeInfo.nextInt());
+		}
+		bridge = new Bridge(THT, (byte) 255, portOffset + offset, remoteAddress); //null if no remote bridge!
+		
+		nodeList.add(bridge);
+		offset++;
+		
+		Node monitor = new Monitor(THT, (byte) 0, portOffset, offset);
+		monitor.start();
+		//create monitor and set it to accept ocnnections on port (portoffset)
+		
+		for (Node n : nodeList) {
+			n.start();
 		}
 		
 		
+		
+		
+		input.close();
 //		
 //		Project3.nodeCount = Integer.parseInt(args[0]);
 //		if (args.length == 2) {
@@ -222,5 +255,29 @@ public class Project3 {
 //		System.out.println("Connected and running!");
 //		
  	}
+	
+	private static void parseInput(Node node, File fileIn) {
+		if (!fileIn.exists()) {
+			System.out.println("Unable to get input file: " + fileIn.getPath());
+			return;
+		}
+		
+		Scanner input = null;
+		try {
+			input = new Scanner(fileIn);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if (input == null) {
+			System.out.println("Serious error! Unable to open scanner over input!");
+			return;
+		}
+		
+		while (input.hasNextLine()) {
+			node.addMessage(input.nextLine());
+		}
+	}
 
 }

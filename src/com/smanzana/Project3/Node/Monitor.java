@@ -1,8 +1,14 @@
 package com.smanzana.Project3.Node;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.LinkedList;
 
 import com.smanzana.Project3.Project3;
 import com.smanzana.Project3.Frame.Frame;
@@ -18,22 +24,40 @@ import com.smanzana.Project3.Frame.Token;
  */
 public class Monitor extends Node {
 
-	public Monitor(int tokenHoldingTime, byte address, SocketAddress sock) {
-		super(tokenHoldingTime, address, sock);
+	private int lastPort;
+	private boolean finished;
+	
+	public Monitor(int tokenHoldingTime, byte address, int port, int lastPort) {
+		super(tokenHoldingTime, address, port);
+		this.lastPort = lastPort;
+		finished = false;
+	}
+	
+	@Override
+	public void setup() {
+		System.out.println("Monitor is trying to connect on port " + port);
+		connect(new InetSocketAddress("127.0.0.1", port + lastPort - 1));
+		System.out.println("Monitor has established a connection. Now, monitor is listening... " + (port + lastPort - 1));
+		listen();
+		System.out.println("Monitor connected!");
 	}
 	
 	@Override
 	public void run() {
-		//setup();
+		setup();
 		
 		while (true) {
 			//We don't have messages to send, so we don't need to worry about if we have the token or not.
 			//instead, just try and fetch the next message
 			
+			if (this.finished) {
+				System.out.print("#");
+			}
+			
 			byte[] frame, header = null;
 			
 			try {
-				header = receive(5, tokenHoldingTime * Project3.lastAddress * 165); //10 milliseconds * number of nodes * THT);
+				header = receive(5, 500 + tokenHoldingTime * Project3.lastAddress * 200); //10 milliseconds * number of nodes * THT);
 				//I spent a good amount of time figuring out what the scaling (/\) factor should be. I thought 10 millis would be
 				//good, but in practice it thought the token had been dropped when there was no chance of that a lot. I went
 				//to 165 after 120 and 100 and 80 and 50 and 40 and 35 and 30 and 25 and 20 and 15 and 10 because it
@@ -48,10 +72,12 @@ public class Monitor extends Node {
 			//if it is null, we have a problem. We waited the maximum time it should take for the token to go around.
 			//e.g. the token was dropped somehwere and we need to generate a new one
 			if (header == null) {
-				System.out.println("Monitor has detected that the token was dropped!\nGenerating a new token...");
-				drainRing();
-				token = new Token(null);
-				passToken();
+				if (!finished) {
+					System.out.println("Monitor has detected that the token was dropped!\nGenerating a new token...");
+					drainRing();
+					token = new Token(null);
+					passToken();
+				}
 				continue;
 			}
 			
@@ -100,6 +126,8 @@ public class Monitor extends Node {
 				//else the ring is not in use and the token needs be drained. In it's place, issue a FINISH TOKEN
 				//defined (by me) to be a token with the value 3 for the FC byte
 				passFinish();
+				System.out.println("Issued a finish frame!");
+				finished = true;
 				//don't send the token, effectively draining it from the ring.
 				continue;
 			}
