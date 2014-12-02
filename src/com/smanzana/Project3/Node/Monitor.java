@@ -17,13 +17,13 @@ import com.smanzana.Project3.Frame.Token;
  */
 public class Monitor extends Node {
 
-	public Monitor(int tokenHoldingTime, byte address, ServerSocket sSock) {
-		super(tokenHoldingTime, address, sSock);
+	public Monitor(int tokenHoldingTime, byte address) {
+		super(tokenHoldingTime, address);
 	}
 	
 	@Override
 	public void run() {
-		setup();
+		//setup();
 		
 		while (true) {
 			//We don't have messages to send, so we don't need to worry about if we have the token or not.

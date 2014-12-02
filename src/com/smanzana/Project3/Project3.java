@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 
 import com.smanzana.Project3.Node.Monitor;
@@ -13,19 +15,23 @@ import com.smanzana.Project3.Node.Node;
 public class Project3 {
 	
 	public static byte lastAddress = 0;
-	public static int portOffset = 30010;
+	public static int portOffset;
 	public static int THT = 10;
+	public static Random rand;
 	
 	private static int nodeCount;
 	
 	public static void main(String[] args) { //has to be 2 or more!
 		
-		if (args.length != 1) {
+		rand = new Random();
+		
+		if (args.length != 1 && args.length != 2) {
 			//invalid args
-			System.out.println("Usage: java -jar jar_name.jar ring_config.conf");
+			System.out.println("Usage: java -jar jar_name.jar ring_config.conf [port offset]");
 			return;
 		}
 		
+		//open file and make sure it's valid
 		File file = new File(args[0]);
 		if (!file.exists()) {
 			System.out.println("Unable to find the config file: " + args[0]);
@@ -41,11 +47,41 @@ public class Project3 {
 			return;
 		}
 		
+		//generate a port offset. If we're not passed one, generate a random one
+		if (args.length == 2) {
+			portOffset = Integer.parseInt(args[1]);
+		} else {
+			System.out.print("Generating random port offset...  ");
+			int offsetOffset = rand.nextInt(40000);
+			portOffset = 20000 + offsetOffset;
+			System.out.println(portOffset);
+		}
+		
+		Node monitor = new Monitor(THT, (byte) 0);
+		monitor.listen(new SocketAddress());
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		int offset = 1;
+		
 		byte address;
-		Node node;
+		Node lastNode = null, node;
 		while (input.hasNextLine()) {
 			address = (byte) Integer.parseInt(input.nextLine());
-			node = new Node(THT, address, null);
+			node = new Node(THT, address);
+			
+			if (lastNode != null) {
+				//this isn't the first node, so connect it to the previous
+				
+			}
 		}
 		
 		

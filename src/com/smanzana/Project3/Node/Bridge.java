@@ -36,8 +36,8 @@ public class Bridge extends Node {
 	}
 	
 	
-	public Bridge(int tokenHoldingTime, byte address, ServerSocket sSock, int bridgePort) {
-		super(tokenHoldingTime, address, sSock);
+	public Bridge(int tokenHoldingTime, byte address, int bridgePort) {
+		super(tokenHoldingTime, address);
 		
 		try {
 			bridgeSock = new Socket("127.0.0.1", bridgePort);
