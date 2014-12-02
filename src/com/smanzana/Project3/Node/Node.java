@@ -43,7 +43,7 @@ public class Node extends Thread {
 	 * @param tokenHoldingTime How many frames this node can send upon receipt of the token
 	 * @param address A byte-wide address of this node. This is pretty much the node's ID
 	 */
-	public Node(int tokenHoldingTime, byte address) {
+	public Node(int tokenHoldingTime, byte address, SocketAddress listenAddress) {
 		this.tokenHoldingTime = tokenHoldingTime;
 		this.address = address;
 		this.token = null;
@@ -69,6 +69,14 @@ public class Node extends Thread {
 			e.printStackTrace();
 		}
 		
+		if (listenAddress == null) {
+			System.out.println("Error occured as a result of the listenAddress");
+			return;
+		}
+		
+		System.out.println("Node [" + address + "] is beginning to listen...");
+		listen(listenAddress);
+		System.out.println("Finished Listening!");
 	}
 	
 	/**

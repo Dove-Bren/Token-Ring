@@ -2,6 +2,7 @@ package com.smanzana.Project3.Node;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 
 import com.smanzana.Project3.Project3;
 import com.smanzana.Project3.Frame.Frame;
@@ -17,8 +18,8 @@ import com.smanzana.Project3.Frame.Token;
  */
 public class Monitor extends Node {
 
-	public Monitor(int tokenHoldingTime, byte address) {
-		super(tokenHoldingTime, address);
+	public Monitor(int tokenHoldingTime, byte address, SocketAddress sock) {
+		super(tokenHoldingTime, address, sock);
 	}
 	
 	@Override
