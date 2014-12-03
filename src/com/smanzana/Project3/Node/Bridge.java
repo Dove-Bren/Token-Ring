@@ -111,23 +111,23 @@ public class Bridge extends Node {
 		
 		byte[] frame;
 		while (true) {
-			
-			if (connected) {
-				frame = getBridgeFrame();
-				
-				if (frame != null) {
-					if (processBridgeFrame(frame)) {
-						try {
-							kill();
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.out.println("ERROR when trying to kill bridge!!!!!!");
-						}
-						return;
-					}
-					continue;
-				}
-			}
+//
+//			if (connected) {
+//				frame = getBridgeFrame();
+//				
+//				if (frame != null) {
+//					if (processBridgeFrame(frame)) {
+//						try {
+//							kill();
+//						} catch (IOException e) {
+//							e.printStackTrace();
+//							System.out.println("ERROR when trying to kill bridge!!!!!!");
+//						}
+//						return;
+//					}
+//					continue;
+//				}
+//			}
 			
 			
 			try {
@@ -154,23 +154,23 @@ public class Bridge extends Node {
 			//regardless of if we got a ring frame, now try and fetch/process a bridge frame
 			//this is how we avoid starving the bridge of ring. We do one of either if they have it
 			
-//			if (!connected) {
-//				continue;
-//			}
-//			frame = getBridgeFrame();
-//			
-//			if (frame != null) {
-//				if (processBridgeFrame(frame)) {
-//					try {
-//						kill();
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//						System.out.println("ERROR when trying to kill bridge!!!!!!");
-//					}
-//					return;
-//				}
-//				return;
-//			}
+			if (!connected) {
+				continue;
+			}
+			frame = getBridgeFrame();
+			
+			if (frame != null) {
+				if (processBridgeFrame(frame)) {
+					try {
+						kill();
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.out.println("ERROR when trying to kill bridge!!!!!!");
+					}
+					return;
+				}
+				//return;
+			}
 		}
 		
 		
@@ -247,15 +247,15 @@ public class Bridge extends Node {
 	}
 	
 	private boolean processRingFrame(byte[] frame) {
-		if (Frame.Header.isToken(Frame.getHeader(frame))) {
-
-			try {
-				send(frame); //pass token
-			} catch (IOException e) {
-				System.out.println("Error passing token in bridge!");
-			} 
-			return false;
-		}
+//		if (Frame.Header.isToken(Frame.getHeader(frame))) {
+//
+//			try {
+//				send(frame); //pass token
+//			} catch (IOException e) {
+//				System.out.println("Error passing token in bridge!");
+//			} 
+//			return false;
+//		}
 		
 		if (Frame.Header.isFinish(Frame.getHeader(frame))) {
 			//communicate to remote that this ring is finished

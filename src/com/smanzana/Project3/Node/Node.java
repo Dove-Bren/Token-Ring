@@ -309,7 +309,8 @@ public class Node extends Thread {
   				}
   				
   				if (!sentMessages.isEmpty()) {
-  					System.out.println("Node [" + address + "] didn't get an ack!");
+  					System.out.println("Node [" + address + "] didn't get an ack!\n");
+  					System.out.println(sentMessages);
   				}
   				sentMessages.clear();
   				
@@ -386,7 +387,10 @@ public class Node extends Thread {
 					msg += (Frame.Header.getSize(header) & 0xFF) + ",";
 					msg += new String(Frame.getData(frame));
 					if (!sentMessages.remove(msg)) {
-						System.out.println("Got a second ack for a sent message!");
+						System.out.println("msg: " + msg);
+						System.out.println("Got a second ack for a sent message in [" + address + "]!");
+					} else {
+						System.out.println("node [" + address + "] successfully transfered a frame!!!!!!!!!!!!!!!");
 					}
 					
 				}
@@ -403,6 +407,9 @@ public class Node extends Thread {
 					//push messages back to the front of the queue
 					messages.add(0, msg); //sets it to front of the list
 					sentMessages.remove(msg);
+				}
+				else if (FS == 0) {
+					continue;
 				}
 				
 				//Regardless of if it was properly received or rejected, we now have a chance of 'forgetting' to 
