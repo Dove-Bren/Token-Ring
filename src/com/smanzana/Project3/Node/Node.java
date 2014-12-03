@@ -307,8 +307,10 @@ public class Node extends Thread {
   				while (it.hasPrevious()) {
   					messages.add(0, it.previous());
   				}
-
   				
+  				if (!sentMessages.isEmpty()) {
+  					System.out.println("Node [" + address + "] didn't get an ack!");
+  				}
   				sentMessages.clear();
   				
 				continue;
@@ -383,7 +385,10 @@ public class Node extends Thread {
 					msg += Frame.Header.getDestination(header) + ",";
 					msg += (Frame.Header.getSize(header) & 0xFF) + ",";
 					msg += new String(Frame.getData(frame));
-					sentMessages.remove(msg);
+					if (!sentMessages.remove(msg)) {
+						System.out.println("Got a second ack for a sent message!");
+					}
+					
 				}
 				else if (FS == 3){
 					//rejected
