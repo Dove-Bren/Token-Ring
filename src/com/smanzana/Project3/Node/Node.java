@@ -308,10 +308,6 @@ public class Node extends Thread {
   					messages.add(0, it.previous());
   				}
   				
-  				if (!sentMessages.isEmpty()) {
-  					System.out.println("Node [" + address + "] didn't get an ack!\n");
-  					System.out.println(sentMessages);
-  				}
   				sentMessages.clear();
   				
 				continue;
@@ -386,13 +382,7 @@ public class Node extends Thread {
 					msg += Frame.Header.getDestination(header) + ",";
 					msg += (Frame.Header.getSize(header) & 0xFF) + ",";
 					msg += new String(Frame.getData(frame));
-					if (!sentMessages.remove(msg)) {
-						System.out.println("msg: " + msg);
-						System.out.println("Got a second ack for a sent message in [" + address + "]!");
-					} else {
-						System.out.println("node [" + address + "] successfully transfered a frame!!!!!!!!!!!!!!!");
-					}
-					
+					sentMessages.remove(msg);
 				}
 				else if (FS == 3){
 					//rejected
@@ -605,7 +595,6 @@ public class Node extends Thread {
 	 * Generates the byte-equiv of a token and passes it to the next node in the ring.
 	 */
 	public void passToken() {
-		System.out.println("node " + address + " passing token.");
 		byte t[];
 		
 		t = token.asBytes();
